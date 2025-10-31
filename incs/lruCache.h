@@ -33,8 +33,6 @@ typedef struct lru_cache {
  *  - Puntero a la caché creada, o NULL si ocurre un error.
  */
 lru_cache_t *lru_create(size_t capacity);
-
-
 /*
  * Elimina todos los nodos y libera la estructura lru_cache_t.
  * Parámetros:
@@ -43,8 +41,6 @@ lru_cache_t *lru_create(size_t capacity);
  *   - Nada.
  */
 void lru_destroy(lru_cache_t *cache);
-
-
 /* 
  *Inserta un dato en el caché o lo marca como usado si ya existe.
  * Parámetros:
@@ -55,7 +51,6 @@ void lru_destroy(lru_cache_t *cache);
  *   - -1 en error (cache NULL, dato inválido o fallo de memoria).
  */
 int lru_add(lru_cache_t *cache, char data);
-
 /*
  *Indica que un elemento fue usado sin eliminarlo, actualizar su prioridad.
  * Parámetros:
@@ -66,8 +61,6 @@ int lru_add(lru_cache_t *cache, char data);
  *   - -1 si no se encontró o en caso de error (cache NULL o dato inválido).
  */
 int lru_get(lru_cache_t *cache, char data);
-
-
 /* 
  *Localiza la posición de un elemento para inspección o verificación.
  * Parámetros:
@@ -86,8 +79,6 @@ int lru_search(const lru_cache_t *cache, char data);
  *   - Ninguno.
  */
 void lru_print_all(const lru_cache_t *cache);
-
-
 /* 
  * Valida que un carácter sea una letra mayúscula A-Z.
  * Parámetros:
@@ -95,8 +86,7 @@ void lru_print_all(const lru_cache_t *cache);
  * Retorno:
  *   - true si c está entre 'A' y 'Z', false en caso contrario.
  */
-bool es_dato_valido(char c);
-
+bool lru_is_valid(char c);
 /* 
  *Crea un nodo nuevo con el dato dado.
  * Parámetros:
@@ -105,8 +95,6 @@ bool es_dato_valido(char c);
  *   - puntero a lru_node_t recién asignado, o NULL si dato inválido o malloc falla.
  */
 lru_node_t *node_create(char dato);
-
-
 /*
  *Busca un nodo por su dato en el caché (sin modificar la lista).
  * Parámetros:
@@ -116,7 +104,6 @@ lru_node_t *node_create(char dato);
  *   - puntero al nodo si se encuentra, NULL si no existe o error.
  */
 lru_node_t *node_find(const lru_cache_t *cache, char dato);
-
 /*
  *Extrae el nodo tail (LRU) de la lista y actualiza cache->size.
  * Parámetros:
@@ -125,8 +112,6 @@ lru_node_t *node_find(const lru_cache_t *cache, char dato);
  *   - puntero al nodo extraído o NULL si la lista está vacía o error.
  */
 lru_node_t *remove_tail(lru_cache_t *cache);
-
-
 /*
  *Mueve un nodo ya existente a la cabeza (MRU).
  * Parámetros:
@@ -136,7 +121,6 @@ lru_node_t *remove_tail(lru_cache_t *cache);
  *   - Ninguno.
  */
 void move_to_head(lru_cache_t *cache, lru_node_t *node);
-
 /*
  *Libera la memoria de un nodo creado por node_create o devuelto por remove_tail.
  * Parámetros:

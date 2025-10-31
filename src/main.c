@@ -39,12 +39,14 @@ static void print_tutorial() {
     puts("");
     puts("4) Insertar cuando está lleno expulsa el LRU:");
     puts("   Ejemplo:");
-    puts("     create 3");
+    puts("     create 5");
     puts("     add A");
     puts("     add B");
     puts("     add C");
-    puts("     add D   # ahora C,B,A -> al añadir D, se expulsará A (LRU)");
-    puts("   Descripción: siempre se elimina el elemento menos reciente (LRU).");
+    puts("     add D");
+    puts("     add E");
+    puts("     add F   # al añadir F (6º), se expulsará A (LRU)");
+    puts("   Descripción: siempre se elimina el elemento menos reciente (LRU) al sobrepasar el limite.");
     puts("");
     puts("5) Buscar posición sin cambiar prioridades:");
     puts("   Comando:  search C");
