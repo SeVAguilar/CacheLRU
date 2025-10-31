@@ -125,14 +125,21 @@ void node_free(lru_node_t *node) {
  * Retorno: puntero al caché o NULL si capacity inválido o malloc falla.
  */
 lru_cache_t *lru_create(size_t capacity) {
-    if (capacity < MIN_CACHE_SIZE) 
-        return NULL;
+    // Validar parámetro mínimo 
+    if (capacity < MIN_CACHE_SIZE)
+        return NULL;                // capacidad no permitida 
+
+    // Reservar memoria para la estructura del caché 
     lru_cache_t *cache = malloc(sizeof(lru_cache_t));
-    if (!cache) 
-        return NULL;
-    cache->capacity = capacity;
-    cache->size = 0;
-    cache->head = cache->tail = NULL;
+    if (!cache)
+        return NULL;                // fallo de asignación 
+
+    // Inicializar 
+    cache->capacity = capacity;     // capacidad máxima 
+    cache->size = 0;                // inicialmente vacío 
+    cache->head = cache->tail = NULL; // lista doblemente enlazada vacía 
+
+    // Devolver caché listo para usar
     return cache;
 }
 
@@ -141,14 +148,17 @@ lru_cache_t *lru_create(size_t capacity) {
  * Parámetro: cache - puntero al caché (puede ser NULL).
  */
 void lru_destroy(lru_cache_t *cache) {
-    if (!cache) return;
+    if (!cache) 
+        return;
+
     lru_node_t *p = cache->head;
     while (p) {
-        lru_node_t *sig = p->next;
-        free(p);
-        p = sig;
+        lru_node_t *sig = p->next; // guardar siguiente antes de free 
+        free(p);                   // liberar nodo actual 
+        p = sig;                   // continuar con el siguiente 
     }
-    free(cache);
+
+    free(cache); // liberar la estructura del cache
 }
 
 /*
@@ -158,29 +168,43 @@ void lru_destroy(lru_cache_t *cache) {
  * Retorno: 0 en éxito, -1 en error (cache NULL, dato inválido, malloc falla).
  */
 int lru_add(lru_cache_t *cache, char data) {
-    if (!cache || !lru_is_valid(data)) return -1;
+    // Validaciones: cache existente y dato válido (A-Z). 
+    if (!cache || !lru_is_valid(data)) 
+        return -1;
 
-    /* Si ya existe, lo usamos -> mover a MRU */
+    // Si ya existe, lo usamos -> mover a MRU 
     lru_node_t *exist = node_find(cache, data);
     if (exist) {
-        move_to_head(cache, exist);
-        return 0;
+        move_to_head(cache, exist); // reubica el nodo como head 
+        return 0;       // éxito: no se crean ni liberan nodos 
     }
 
-    /* Si está lleno, eliminar LRU (tail) */
+    // Si está lleno, eliminar LRU (tail) 
     if (cache->size >= cache->capacity) {
-        lru_node_t *borrar = remove_tail(cache);
-        if (borrar) free(borrar);
+        lru_node_t *borrar = remove_tail(cache); // devuelve nodo desconectado
+        if (borrar) 
+            free(borrar);        // liberar su memoria 
     }
 
-    /* Crear e insertar nuevo nodo como head (MRU) */
+    // Crear e insertar nuevo nodo como head (MRU) 
     lru_node_t *n = node_create(data);
-    if (!n) return -1;
-    n->next = cache->head;
-    n->prev = NULL;
-    if (cache->head) cache->head->prev = n;
-    cache->head = n;
-    if (!cache->tail) cache->tail = n;
+    if (!n) 
+        return -1; //fallo al crear nodo
+
+    // Insertar el nuevo nodo al frente (head = MRU).
+    n->next = cache->head; // siguiente del nuevo = antiguo head 
+    n->prev = NULL;      // nuevo head no tiene prev 
+
+    if (cache->head) 
+        cache->head->prev = n;
+
+    cache->head = n; //actualizar head al nuevo nodo 
+
+    //Si la lista estaba vacía, tail también debe apuntar al nuevo nodo. 
+    if (!cache->tail)
+        cache->tail = n;
+
+        // Actualiza contador de elementos
     cache->size++;
     return 0;
 }
@@ -192,12 +216,19 @@ int lru_add(lru_cache_t *cache, char data) {
  * Retorno: 0 si se encontró y movió, -1 si no existe o error.
  */
 int lru_get(lru_cache_t *cache, char data) {
-    if (!cache || !lru_is_valid(data)) 
+    // Validaciones: existe el cache o el dato es valido
+    if (!cache || !lru_is_valid(data))
         return -1;
+
+    //Buscar el nodo que contiene 'data' (recorre desde head).
     lru_node_t *n = node_find(cache, data);
-    if (!n) 
-        return -1;
+    if (!n)
+        return -1; 
+
+    // Promover el nodo encontrado a MRU (head).
     move_to_head(cache, n);
+
+    
     return 0;
 }
 
@@ -207,34 +238,48 @@ int lru_get(lru_cache_t *cache, char data) {
  * Retorno: índice >=0 (0 = MRU) si se encuentra, -1 si no existe o error.
  */
 int lru_search(const lru_cache_t *cache, char data) {
-    if (!cache || !lru_is_valid(data)) return -1;
-    lru_node_t *p = cache->head;
-    int idx = 0;
-    while (p) {
-        if (p->data == data) return idx;
-        p = p->next;
-        idx++;
-    }
-    return -1;
-}
+    if (!cache || !lru_is_valid(data)) 
+        return -1; // validaciones
 
+    lru_node_t *p = cache->head; // comenzar en MRU
+    int idx = 0;
+
+    while (p) {
+        if (p->data == data)    // encontrado: devolver índice actual
+            return idx;
+        p = p->next;            // avanzar al siguiente (más antiguo)
+        idx++;                  // incrementar posición 
+    }
+
+    return -1; 
+}
 /*
  * Imprimir el contenido del caché en orden MRU -> LRU.
  * Parámetro: cache - puntero al caché (const).
  */
 void lru_print_all(const lru_cache_t *cache) {
-    if (!cache) return;
+    // Si no hay cache, no imprime. (sale)
+    if (!cache)
+        return;
+
+    // Comenzar en el nodo más reciente (MRU). 
     lru_node_t *p = cache->head;
+
+    
     printf("Contenido del caché: ");
+
+    // Si la lista está vacía
     if (!p) {
         printf("(vacío)\n");
         return;
     }
+
+    // Recorrer e imprimir cada elemento 
     while (p) {
         printf("%c", p->data);
         if (p->next) printf(" - ");
         p = p->next;
+    
     }
     printf("\n");
 }
-// 

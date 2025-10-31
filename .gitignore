@@ -1,1 +1,23 @@
+# Visual Studio Code
 .vscode/
+
+# Binarios / artefactos de compilación
+bin/
+*.o
+a.out
+*.out
+*.exe
+
+# Archivos temporales y editores
+*~
+*.swp
+*.swo
+.DS_Store
+
+# Logs / cobertura / valgrind
+*.log
+valgrind*.log
+coverage/
+
+# Carpeta de build común
+cmake_build/

@@ -94,69 +94,164 @@ int main() {
         }
 
         // create <N> 
+        // Maneja el comando: create <N>. Crea el caché con capacidad N.
         if (strcmp(cmd, "create") == 0) {
+        // Toma el token como argumento y verifica si es "create"
+
             char *arg = strtok(NULL, " \t");
-            if (!arg) 
+            //Toma el siguiente token (el argumento N). 
+
+            if (!arg){
+            // Si falta el argumento, ignora la línea y sigue esperando comandos.
+                puts("Uso: create <N>");
                 continue;
-            long n = strtol(arg, NULL, 10);
-            if (n < MIN_CACHE_SIZE) 
+            }
+
+            // Convierte la cadena `arg` a un entero de tipo long en base 10.
+            // Si `arg` no empieza por un número devuelve 0
+            long n = strtol(arg, NULL,10);
+
+            if (n < MIN_CACHE_SIZE){
+            //Rechaza tamaños menores que el mínimo (MIN_CACHE_SIZE). 
+            //Si n menor que el mínimo, ignora la entrada.
+                printf("Error: el tamaño debe ser >= %d\n", MIN_CACHE_SIZE);
                 continue;
-            if (cache) 
+            }
+
+            // Crear primero y comprobar exito antes de destruir el anterior
+            lru_cache_t *new_cache = lru_create((size_t)n);
+            if (!new_cache) {
+                puts("Error: no se pudo crear el caché (malloc fallo).");
+                continue;
+            }
+            if (cache){
+            // Si ya existe un caché previo, lo libera 
                 lru_destroy(cache);
-            cache = lru_create((size_t)n);
+            }
+
+            cache = new_cache;
+            printf("Caché creado con capacidad %ld\n", n);
+
             continue;
+            // Se procesa el comando y pasa a la siguiente iteracion
         }
 
         // add <A>
+        // Maneja el comando: add <A>. Añade la letra A al cache o la marca como usada
         if (strcmp(cmd, "add") == 0) {
+        // Toma el token como argumento y verifica si es "add"
+
             char *arg = strtok(NULL, " \t");
-            if (!arg || strlen(arg) != 1 || !cache) 
+            //Toma el siguiente token (el argumento). 
+
+            if (!arg || strlen(arg) != 1 || !cache){
+            // Si no hay argumento, si el token no es exactamente 1 carácter, 
+            //o si no existe caché, el comando se ignora.
+                puts("Uso: add <A>  (una sola letra)");
                 continue;
+            }
+
+            if (!cache) {
+            // Comprueba si existe el cache
+                puts("Primero cree el caché con 'create <N>'");
+                continue;
+            }
+
             char c = (char)toupper((unsigned char)arg[0]);
-            if (c < 'A' || c > 'Z') 
+            // Convierte el caracter a mayuscula
+
+            if (c < 'A' || c > 'Z'){
+            // Valida que el caracter sea valido (A,Z)
+                puts("Dato inválido: usar letra A-Z");
                 continue;
+            }
+
             lru_add(cache, c);
+            // Agrega al cache y expulsa LRU si esta lleno
+
             continue;
+            // Se procesa el comando y pasa a la siguiente iteracion
+
         }
 
         // get <A> 
+        // Maneja el comando: get <A>.  Promueve el elemento a MRU si existe.
         if (strcmp(cmd, "get") == 0) {
+        // Toma el token como argumento y verifica si es "get"
+
             char *arg = strtok(NULL, " \t");
-            if (!arg || strlen(arg) != 1 || !cache) 
+            // Toma el siguiente token (el argumento esperado: una sola letra).
+
+            if (!arg || strlen(arg) != 1 || !cache){
+            // Si falta el argumento, si no es exactamente 1 carácter,
+            // o si no hay caché creado, se ignora el comando.
+                puts("Uso: get <A>  (una sola letra)");
                 continue;
+            }
+
             char c = (char)toupper((unsigned char)arg[0]);
-            if (c < 'A' || c > 'Z') 
+            // Convierte el carácter a mayúscula
+
+            if (c < 'A' || c > 'Z') {
+            // Valida que el caracter sea valido (A,Z)
+                puts("Dato inválido: usar letra A-Z");
                 continue;
-            lru_get(cache, c);
+            }
+
+            if (lru_get(cache, c) == 0) {
+                printf("Dato %c promovido a MRU\n", c);
+            } else {
+                printf("Dato %c no encontrado\n", c);
+            }
+
             continue;
+            // Comando procesado, continuar con la siguiente iteracion.
         }
 
         // search <A> 
+        // Maneja el comando: search <A>. Imprime la posición (0 = MRU) o -1 si no existe.
         if (strcmp(cmd, "search") == 0) {
             char *arg = strtok(NULL, " \t");
-            if (!arg || strlen(arg) != 1 || !cache) { 
-                puts("-1"); 
-                continue; 
+            // Toma el siguiente token (el argumento esperado: una sola letra).
+
+            if (!arg || strlen(arg) != 1 || !cache){
+            // Si falta el argumento, si no es exactamente 1 carácter,
+            // o si no hay caché creado, se ignora el comando.
+                puts("Uso: get <A>  (una sola letra)");
+                continue;
             }
+
             char c = (char)toupper((unsigned char)arg[0]);
-            if (c < 'A' || c > 'Z') { 
-                puts("-1"); 
-                continue; 
+            // Convierte el carácter a mayúscula
+
+            if (c < 'A' || c > 'Z') {
+            // Valida que el caracter sea valido (A,Z)
+                puts("Dato inválido: usar letra A-Z");
+                continue;
             }
+
+            // Llama a la función que devuelve la posición sin cambiar prioridades.
             int pos = lru_search(cache, c);
+            // Imprime la posición (o -1 si no se encontró).
             printf("%d\n", pos);
             continue;
         }
 
-        // all 
+         // all 
+        // Maneja el comando: all. Imprime el contenido del caché en orden MRU -> LRU.
         if (strcmp(cmd, "all") == 0) {
+            // Si no se ha creado el cache aun, no hay nada que imprimir.
             if (!cache) 
                 continue;
+
+            // Llama a la función que recorre e imprime todos los elementos
+            // desde el más reciente (MRU) hasta el menos reciente (LRU).
             lru_print_all(cache);
             continue;
         }
 
         // exit 
+        // Maneja el comando: exit. Sale del bucle principal para terminar el programa.
         if (strcmp(cmd, "exit") == 0) {
             break;
         }
@@ -165,6 +260,7 @@ int main() {
     }
 
     if (cache) 
+    // Si el cache existe libera la memoria
         lru_destroy(cache);
     return 0;
 }
